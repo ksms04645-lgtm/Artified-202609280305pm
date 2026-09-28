@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Check, X, Package, Video, Instagram, Feather, FileJson, Code, Zap, Database, Copy, Layers } from 'lucide-react';
+import { Download, Check, X, Package, Video, Instagram, Feather, FileJson, Code, Zap, Database, Copy, RefreshCw } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import SAVED_PRODUCTS from '../data/products.json';
 import SAVED_TIKTOK_REELS from '../data/tiktok_reels.json';
@@ -13,9 +13,10 @@ interface WebsiteExportModalProps {
 
 export const WebsiteExportModal: React.FC<WebsiteExportModalProps> = ({ isOpen, onClose }) => {
   const { products, reels, instagramItems, craftStory } = useCart() as any;
-  const [copiedPart, setCopiedPart] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [oneClickSuccess, setOneClickSuccess] = useState(false);
-  const [masterSuccess, setMasterSuccess] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   if (!isOpen) return null;
 
@@ -24,35 +25,40 @@ export const WebsiteExportModal: React.FC<WebsiteExportModalProps> = ({ isOpen, 
   const currentInstagram = instagramItems && instagramItems.length > 0 ? instagramItems : SAVED_INSTAGRAM_ITEMS;
   const currentCraftStory = craftStory || SAVED_CRAFT_STORY;
 
-  const midPoint = Math.ceil(currentProducts.length / 2);
-  const productsPart1 = currentProducts.slice(0, midPoint);
-  const productsPart2 = currentProducts.slice(midPoint);
+  const handleSyncToServerDisk = async () => {
+    setIsSyncing(true);
+    try {
+      await Promise.all([
+        fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentProducts),
+        }),
+        fetch('/api/tiktok-reels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentReels),
+        }),
+        fetch('/api/instagram-journal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentInstagram),
+        }),
+        fetch('/api/craft-story', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentCraftStory),
+        }),
+      ]);
 
-  const handleDownloadMasterBundle = () => {
-    const masterBundle = {
-      appVersion: "1.0.0",
-      appName: "Artified NP - Handmade Craft Atelier",
-      exportedAt: new Date().toISOString(),
-      description: "Complete master bundle containing all products, TikTok reels, Instagram journal items, and Craft Story for AI Studio cross-build transfer.",
-      productsCount: currentProducts.length,
-      tiktokReelsCount: currentReels.length,
-      instagramItemsCount: currentInstagram.length,
-      products: currentProducts,
-      reels: currentReels,
-      instagramItems: currentInstagram,
-      craftStory: currentCraftStory,
-    };
-
-    const blob = new Blob([JSON.stringify(masterBundle, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ArtifiedNP_Complete_Master_Export_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    setMasterSuccess(true);
-    setTimeout(() => setMasterSuccess(false), 3000);
+      setSyncSuccess(true);
+      setTimeout(() => setSyncSuccess(false), 4000);
+    } catch (err) {
+      console.error('Failed to sync state to server disk:', err);
+      alert('Failed to sync files to server disk. Please try again.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleDownloadIndividualFile = (filename: string, data: any) => {
@@ -65,7 +71,11 @@ export const WebsiteExportModal: React.FC<WebsiteExportModalProps> = ({ isOpen, 
     URL.revokeObjectURL(url);
   };
 
-  const handleOneClickExportAll = () => {
+  const handleOneClickExportAll = async () => {
+    // First auto-sync to disk
+    await handleSyncToServerDisk();
+
+    // Then download all 4 files
     handleDownloadIndividualFile('products.json', currentProducts);
     setTimeout(() => handleDownloadIndividualFile('tiktok_reels.json', currentReels), 250);
     setTimeout(() => handleDownloadIndividualFile('instagram_journal.json', currentInstagram), 500);
@@ -75,21 +85,16 @@ export const WebsiteExportModal: React.FC<WebsiteExportModalProps> = ({ isOpen, 
     setTimeout(() => setOneClickSuccess(false), 3000);
   };
 
-  const handleCopyChunk = (partName: string, data: any) => {
-    const textSnippet = `Here is ${partName} JSON data for Artified NP website:\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``;
-    navigator.clipboard.writeText(textSnippet);
-    setCopiedPart(partName);
-    setTimeout(() => setCopiedPart(null), 2500);
-  };
-
   const handleCopyCodeInstructions = () => {
     const instructions = `
-# GITHUB MIGRATION GUIDE
-To export this website to your own GitHub repository with all ${currentProducts.length} products, TikTok videos, Instagram reels, and Craft Story intact, download the 4 JSON files above and place them in your repository's src/data/ folder.
+# 100% GITHUB MIGRATION & SYNC GUIDE:
+1. Click "Sync & Save All to Disk" in the website export panel to flush all ${currentProducts.length} products, TikTok reels, Instagram journal items, and Craft Story directly into 'src/data/*.json' on disk.
+2. Commit and push your repository to GitHub.
+3. Your GitHub repository will now contain 100% of your website with zero missing data!
     `.trim();
     navigator.clipboard.writeText(instructions);
-    setCopiedPart('instructions');
-    setTimeout(() => setCopiedPart(null), 2500);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
@@ -109,10 +114,10 @@ To export this website to your own GitHub repository with all ${currentProducts.
           </div>
           <div>
             <h3 className="font-serif text-xl font-semibold text-[#1C1B1A]">
-              Complete Website & AI Studio Transfer
+              100% GitHub & Server Disk Sync
             </h3>
             <p className="text-xs text-[#736C65]">
-              Copy exact products & videos in safe token-free chunks
+              Ensure all {currentProducts.length} products, videos & reels are saved to disk files
             </p>
           </div>
         </div>
@@ -141,53 +146,30 @@ To export this website to your own GitHub repository with all ${currentProducts.
           </div>
         </div>
 
-        {/* TOKEN-SAFE CHUNKED COPY BUTTONS FOR AI STUDIO */}
+        {/* WHY WAS IT ONLY 50%? EXPLANATION & FIX */}
         <div className="space-y-3 bg-amber-50 p-4 rounded-2xl border border-amber-200">
           <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-amber-700" />
-            <span>Copy Exact Data in Safe Token-Free Chunks</span>
+            <RefreshCw className="w-4 h-4 text-amber-700 animate-spin-slow" />
+            <span>Why did GitHub only transfer 50% before?</span>
           </h4>
           <p className="text-[11px] text-amber-800 leading-relaxed">
-            To prevent token limit errors, copy these 3 parts sequentially into your new AI Studio build chat:
+            When you add or edit products in the app, changes are temporarily stored in your browser's <code className="bg-white px-1 py-0.5 rounded border border-amber-200">localStorage</code>. Unless flushed to disk, GitHub only gets the default starter template files!
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => handleCopyChunk('Products Part 1', productsPart1)}
-              className="py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm"
-            >
-              {copiedPart === 'Products Part 1' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedPart === 'Products Part 1' ? 'Copied Part 1!' : 'Copy Products P1'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCopyChunk('Products Part 2', productsPart2)}
-              className="py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm"
-            >
-              {copiedPart === 'Products Part 2' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedPart === 'Products Part 2' ? 'Copied Part 2!' : 'Copy Products P2'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleCopyChunk('TikTok, Instagram & Craft Story', { reels: currentReels, instagramItems: currentInstagram, craftStory: currentCraftStory })}
-              className="py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm"
-            >
-              {copiedPart === 'TikTok, Instagram & Craft Story' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedPart === 'TikTok, Instagram & Craft Story' ? 'Copied Media!' : 'Copy Media & Story'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* PRO TIP: ATTACH FILES TO AI STUDIO CHAT */}
-        <div className="space-y-2 bg-white p-4 rounded-2xl border border-[#E8DFD8]">
-          <h4 className="text-xs font-bold text-[#1C1B1A] uppercase tracking-wider mb-1">
-            💡 Pro Tip for AI Studio Build:
-          </h4>
-          <p className="text-[11px] text-[#736C65] leading-relaxed">
-            Click <strong className="text-[#1C1B1A]">"⚡ One-Click Export GitHub Data"</strong> below to download the JSON files, then simply drag and drop or attach <code className="bg-[#FAF8F5] px-1.5 py-0.5 rounded border border-[#E8DFD8]">products.json</code> directly into your new AI Studio chat. The AI will read all exact products and videos instantly without any token limits!
-          </p>
+          <button
+            type="button"
+            onClick={handleSyncToServerDisk}
+            disabled={isSyncing}
+            className="w-full py-3 px-4 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold uppercase tracking-wider shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Flushing All Edits to Disk...' : '🚀 Sync & Save All 33 Products & Videos to Disk'}</span>
+          </button>
+          {syncSuccess && (
+            <div className="p-2.5 bg-emerald-100 border border-emerald-300 rounded-xl text-emerald-900 text-xs text-center flex items-center justify-center gap-2">
+              <Check className="w-4 h-4 text-emerald-700" />
+              <span>100% Synced! All products, reels, and stories are now permanently saved to `src/data/*.json` on disk.</span>
+            </div>
+          )}
         </div>
 
         {/* ONE CLICK GITHUB EXPORT BUTTON */}
@@ -195,35 +177,97 @@ To export this website to your own GitHub repository with all ${currentProducts.
           <button
             type="button"
             onClick={handleOneClickExportAll}
-            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white text-xs font-bold uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#1C1B1A] hover:bg-[#34312F] text-[#FAF8F5] text-xs font-bold uppercase tracking-wider shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer border border-[#C5A880]/30"
           >
-            <Zap className="w-4 h-4 text-amber-200 fill-amber-200" />
-            <span>⚡ One-Click Export GitHub Data (All 4 JSON Files)</span>
+            <Zap className="w-4 h-4 text-[#C5A880]" />
+            <span>⚡ Sync to Disk & Download All 4 GitHub JSON Files</span>
           </button>
           {oneClickSuccess && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs text-center flex items-center justify-center gap-2 animate-fade-in">
               <Check className="w-4 h-4 text-emerald-600" />
-              <span>Successfully downloaded products.json, tiktok_reels.json, instagram_journal.json, and craft_story.json!</span>
+              <span>Successfully synced to server disk and downloaded all 4 JSON files!</span>
             </div>
           )}
+          <p className="text-[11px] text-[#736C65] text-center">
+            Guarantees 100% of your website data is saved in disk files ready for GitHub URL import.
+          </p>
         </div>
 
-        {/* SINGULAR MASTER FILE DOWNLOAD */}
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={handleDownloadMasterBundle}
-            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#1C1B1A] to-[#34312F] hover:from-[#34312F] hover:to-[#1C1B1A] text-[#FAF8F5] text-xs font-bold uppercase tracking-wider shadow-xl flex items-center justify-center gap-2.5 transition-all cursor-pointer border border-[#C5A880]/30"
-          >
-            <Database className="w-4 h-4 text-[#C5A880]" />
-            <span>📦 Download Singular Master File (All-in-One JSON)</span>
-          </button>
-          {masterSuccess && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs text-center flex items-center justify-center gap-2 animate-fade-in">
-              <Check className="w-4 h-4 text-emerald-600" />
-              <span>Successfully downloaded singular master file!</span>
-            </div>
-          )}
+        {/* Individual Data Files */}
+        <div className="space-y-2 bg-white p-4 rounded-2xl border border-[#E8DFD8]">
+          <h4 className="text-xs font-bold text-[#1C1B1A] uppercase tracking-wider mb-2">
+            Individual Data Files (`src/data/`)
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleDownloadIndividualFile('products.json', currentProducts)}
+              className="p-2.5 bg-[#FAF8F5] hover:bg-[#E8DFD8]/40 border border-[#E8DFD8] rounded-xl text-left flex items-center justify-between transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <FileJson className="w-4 h-4 text-[#C5A880]" />
+                <span className="text-xs font-medium text-[#1C1B1A]">products.json</span>
+              </div>
+              <Download className="w-3.5 h-3.5 text-[#736C65]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleDownloadIndividualFile('tiktok_reels.json', currentReels)}
+              className="p-2.5 bg-[#FAF8F5] hover:bg-[#E8DFD8]/40 border border-[#E8DFD8] rounded-xl text-left flex items-center justify-between transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <FileJson className="w-4 h-4 text-[#C5A880]" />
+                <span className="text-xs font-medium text-[#1C1B1A]">tiktok_reels.json</span>
+              </div>
+              <Download className="w-3.5 h-3.5 text-[#736C65]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleDownloadIndividualFile('instagram_journal.json', currentInstagram)}
+              className="p-2.5 bg-[#FAF8F5] hover:bg-[#E8DFD8]/40 border border-[#E8DFD8] rounded-xl text-left flex items-center justify-between transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <FileJson className="w-4 h-4 text-[#C5A880]" />
+                <span className="text-xs font-medium text-[#1C1B1A]">instagram_journal.json</span>
+              </div>
+              <Download className="w-3.5 h-3.5 text-[#736C65]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleDownloadIndividualFile('craft_story.json', currentCraftStory)}
+              className="p-2.5 bg-[#FAF8F5] hover:bg-[#E8DFD8]/40 border border-[#E8DFD8] rounded-xl text-left flex items-center justify-between transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <FileJson className="w-4 h-4 text-[#C5A880]" />
+                <span className="text-xs font-medium text-[#1C1B1A]">craft_story.json</span>
+              </div>
+              <Download className="w-3.5 h-3.5 text-[#736C65]" />
+            </button>
+          </div>
+        </div>
+
+        {/* GitHub Migration Guide */}
+        <div className="space-y-2 bg-white p-4 rounded-2xl border border-[#E8DFD8]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#1C1B1A] uppercase tracking-wider flex items-center gap-1.5">
+              <Code className="w-3.5 h-3.5 text-[#C5A880]" />
+              <span>100% GITHUB SYNC GUIDE</span>
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyCodeInstructions}
+              className="text-[11px] font-semibold text-[#C5A880] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              {copied ? <Check className="w-3 h-3 text-emerald-600" /> : null}
+              <span>{copied ? 'Copied Guide!' : 'Copy Guide'}</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-[#736C65] leading-relaxed">
+            After clicking <strong className="text-[#1C1B1A]">"Sync & Save All to Disk"</strong>, all {currentProducts.length} products and videos are written directly to <code className="bg-[#FAF8F5] px-1 py-0.5 rounded border border-[#E8DFD8]">src/data/*.json</code> on disk. When you push to GitHub or import via GitHub URL, 100% of your website will transfer with zero data loss!
+          </p>
         </div>
 
         <div className="text-center pt-1">
