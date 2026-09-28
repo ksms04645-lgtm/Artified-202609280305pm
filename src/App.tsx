@@ -24,6 +24,8 @@ import { InstagramManageModal } from './components/InstagramManageModal';
 import { CraftStoryModal } from './components/CraftStoryModal';
 import { SellerReviewsModal } from './components/SellerReviewsModal';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
+import { GitHubImportModal } from './components/GitHubImportModal';
+import { WebsiteExportModal } from './components/WebsiteExportModal';
 import { useCart } from './context/CartContext';
 
 interface ErrorBoundaryProps {
@@ -77,7 +79,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 }
 
 function AppContent() {
-  const { isGoogleDriveOpen, setIsGoogleDriveOpen } = useCart();
+  const { isGoogleDriveOpen, setIsGoogleDriveOpen, isGitHubImportOpen, setIsGitHubImportOpen, isWebsiteExportOpen, setIsWebsiteExportOpen } = useCart();
 
   return (
     <div id="top" className="min-h-screen bg-[#FAF8F5] text-[#1C1B1A] flex flex-col font-sans selection:bg-[#E8DFD8] selection:text-[#1C1B1A]">
@@ -111,6 +113,8 @@ function AppContent() {
       <CraftStoryModal />
       <SellerReviewsModal />
       <GoogleDriveSyncModal isOpen={isGoogleDriveOpen} onClose={() => setIsGoogleDriveOpen(false)} />
+      <GitHubImportModal isOpen={isGitHubImportOpen} onClose={() => setIsGitHubImportOpen(false)} />
+      <WebsiteExportModal isOpen={isWebsiteExportOpen} onClose={() => setIsWebsiteExportOpen(false)} />
       <SellerToolbar />
 
       {/* Mobile Sticky Quick Navigation */}

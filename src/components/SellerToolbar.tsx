@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Plus, Lock, ChevronUp, ChevronDown, RotateCcw, Package, Check, Layers, Video, Feather, Instagram, Star, MessageSquare, HardDrive } from 'lucide-react';
+import { Sparkles, Lock, ChevronUp, ChevronDown, Package, Check, Layers, Video, Feather, Instagram, Star, MessageSquare } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 export const SellerToolbar: React.FC = () => {
@@ -7,8 +7,6 @@ export const SellerToolbar: React.FC = () => {
     isSellerMode, 
     setIsSellerMode, 
     products, 
-    openProductEditor,
-    resetProductsToDefault,
     setIsCatalogListOpen,
     reels,
     openTikTokEditor,
@@ -18,21 +16,12 @@ export const SellerToolbar: React.FC = () => {
     bestsellerThreshold,
     setBestsellerThreshold,
     openReviewsManager,
-    setIsGoogleDriveOpen
+    setIsWebsiteExportOpen
   } = useCart();
 
   const [isMinimized, setIsMinimized] = useState(false);
-  const [resetConfirm, setResetConfirm] = useState(false);
 
   if (!isSellerMode) return null;
-
-  const handleReset = () => {
-    if (confirm('Are you sure you want to restore the default product catalog? Any custom pieces or edits will be reset.')) {
-      resetProductsToDefault();
-      setResetConfirm(true);
-      setTimeout(() => setResetConfirm(false), 2000);
-    }
-  };
 
   return (
     <aside 
@@ -108,15 +97,6 @@ export const SellerToolbar: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => openProductEditor(null)}
-              className="w-full py-2 px-3 bg-white/10 hover:bg-white/15 text-white text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition-colors border border-white/10"
-            >
-              <Plus className="w-3.5 h-3.5 text-[#C5A880]" />
-              <span>Add New Piece</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => openTikTokEditor(null)}
               className="w-full py-2 px-3 bg-white/10 hover:bg-white/15 text-white text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition-colors border border-white/10"
             >
@@ -153,31 +133,21 @@ export const SellerToolbar: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setIsGoogleDriveOpen(true)}
-              className="w-full py-2 px-3 bg-[#C5A880]/20 hover:bg-[#C5A880]/30 text-[#E6C687] text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors border border-[#C5A880]/40"
+              onClick={() => setIsWebsiteExportOpen(true)}
+              className="w-full py-2 px-3 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors border border-amber-500/40"
             >
-              <HardDrive className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>Google Drive Cloud Backup</span>
+              <Package className="w-3.5 h-3.5 text-amber-300" />
+              <span>Export Complete Website & All Products</span>
             </button>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="py-1.5 px-2 bg-white/5 hover:bg-white/10 text-[11px] text-[#D8D2CB] rounded-lg flex items-center justify-center gap-1 border border-white/10 transition-colors"
-                title="Reset back to initial factory catalog"
-              >
-                <RotateCcw className="w-3 h-3 text-[#A69E96]" />
-                <span>{resetConfirm ? 'Reset Done' : 'Reset Defaults'}</span>
-              </button>
-
+            <div>
               <button
                 type="button"
                 onClick={() => setIsSellerMode(false)}
-                className="py-1.5 px-2 bg-white/5 hover:bg-rose-950/40 text-[11px] text-rose-300 rounded-lg flex items-center justify-center gap-1 border border-rose-900/30 transition-colors"
+                className="w-full py-2 px-3 bg-white/5 hover:bg-rose-950/40 text-xs text-rose-300 rounded-xl flex items-center justify-center gap-1.5 border border-rose-900/30 transition-colors"
                 title="Exit seller mode to view site as customer"
               >
-                <Lock className="w-3 h-3 text-rose-400" />
+                <Lock className="w-3.5 h-3.5 text-rose-400" />
                 <span>Exit & Lock</span>
               </button>
             </div>

@@ -141,6 +141,12 @@ interface CartContextType {
   // Google Drive Cloud Sync Modal State
   isGoogleDriveOpen: boolean;
   setIsGoogleDriveOpen: (val: boolean) => void;
+  // GitHub Import Modal State
+  isGitHubImportOpen: boolean;
+  setIsGitHubImportOpen: (val: boolean) => void;
+  // Website Export Modal State
+  isWebsiteExportOpen: boolean;
+  setIsWebsiteExportOpen: (val: boolean) => void;
   // Automated Monthly Bestseller Threshold & Live Online Sales Tracking
   bestsellerThreshold: number;
   setBestsellerThreshold: (val: number) => void;
@@ -426,6 +432,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const [isGoogleDriveOpen, setIsGoogleDriveOpen] = useState<boolean>(false);
+  const [isGitHubImportOpen, setIsGitHubImportOpen] = useState<boolean>(false);
+  const [isWebsiteExportOpen, setIsWebsiteExportOpen] = useState<boolean>(false);
 
   // Monthly Bestseller Threshold (set by seller in Seller Studio)
   const [bestsellerThreshold, setBestsellerThresholdState] = useState<number>(() => {
@@ -1768,6 +1776,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Google Drive Cloud Sync
         isGoogleDriveOpen,
         setIsGoogleDriveOpen,
+        // GitHub Import
+        isGitHubImportOpen,
+        setIsGitHubImportOpen,
+        // Website Export
+        isWebsiteExportOpen,
+        setIsWebsiteExportOpen,
         // Monthly Bestseller Threshold and Sales Tracking
         bestsellerThreshold,
         setBestsellerThreshold,
